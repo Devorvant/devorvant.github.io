@@ -1,4 +1,4 @@
 User-agent: *
 Disallow:
 
-Sitemap: http://devorvant.ru/sitemap.xml
+Sitemap: https://devorvant.ru/sitemap.xml
