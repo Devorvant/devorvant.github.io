@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LinkedIn Monitor — devorvant.ru</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--text:#162033;--muted:#64748b;--line:#dbe3ee;--blue:#0a66c2;--high:#b42318;--medium:#b54708;--ok:#067647;--shadow:0 8px 28px rgba(15,23,42,.08)}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+a{color:var(--blue);text-decoration:none}button,input,select{font:inherit}
+.top{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line)}.topin{max-width:1440px;margin:auto;padding:14px 22px;display:flex;gap:14px;align-items:center;justify-content:space-between}.brand{font-size:20px;font-weight:750}.brand small{display:block;font-size:12px;font-weight:500;color:var(--muted)}.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.btn{border:1px solid var(--line);background:white;padding:8px 12px;border-radius:9px;cursor:pointer}.btn:hover{background:#f8fafc}.status{font-weight:700;padding:6px 10px;border-radius:20px;background:#ecfdf3;color:var(--ok)}
+.wrap{max-width:1440px;margin:0 auto;padding:22px}.cards{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:12px;margin-bottom:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px;box-shadow:var(--shadow)}.card .n{font-size:28px;font-weight:750}.card .l{color:var(--muted);font-size:12px;margin-top:2px}.high{color:var(--high)}.medium{color:var(--medium)}
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 14px}.tab{border:1px solid var(--line);background:#fff;padding:9px 13px;border-radius:9px;cursor:pointer}.tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}.panel{display:none}.panel.active{display:block}.box{background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);overflow:hidden}.boxhead{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.boxhead h2{font-size:16px;margin:0}.filter{padding:7px 9px;border:1px solid var(--line);border-radius:8px;min-width:220px}
+.tablewrap{overflow:auto;max-height:67vh}table{width:100%;border-collapse:collapse;min-width:900px}th,td{padding:10px 12px;border-bottom:1px solid #edf1f5;text-align:left;vertical-align:top}th{position:sticky;top:0;background:#f8fafc;color:#475569;font-size:12px;z-index:2}tr:hover td{background:#fafcff}.pill{display:inline-block;padding:3px 7px;border-radius:12px;background:#eef2f7;font-size:11px;font-weight:700}.p-high{background:#fee4e2;color:var(--high)}.p-medium{background:#fff1e6;color:var(--medium)}.p-pending{background:#fff7d6;color:#854d0e}.small{font-size:12px;color:var(--muted)}.reason{max-width:540px}.error{background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;padding:12px;border-radius:10px;margin-bottom:15px;display:none}.empty{padding:30px;text-align:center;color:var(--muted)}
+@media(max-width:1000px){.cards{grid-template-columns:repeat(3,1fr)}}@media(max-width:600px){.wrap{padding:12px}.topin{padding:10px 12px}.cards{grid-template-columns:repeat(2,1fr)}.card .n{font-size:23px}.filter{min-width:0;width:100%}}
+</style>
+</head>
+<body>
+<header class="top"><div class="topin"><div class="brand">LinkedIn Monitor<small>Feed · CRM · Actions · Jobs</small></div><div class="toolbar"><span id="pipelineStatus" class="status">Загрузка…</span><button class="btn" id="refreshBtn">Обновить</button><a class="btn" href="index.html">На сайт</a></div></div></header>
+<main class="wrap">
+<div id="err" class="error"></div>
+<section class="cards">
+<div class="card"><div id="lastRun" class="n" style="font-size:16px">—</div><div class="l">Последний анализ</div></div>
+<div class="card"><div id="posts" class="n">—</div><div class="l">Постов Feed</div></div>
+<div class="card"><div id="high" class="n high">—</div><div class="l">High signals</div></div>
+<div class="card"><div id="medium" class="n medium">—</div><div class="l">Medium signals</div></div>
+<div class="card"><div id="crm" class="n">—</div><div class="l">CRM контактов</div></div>
+<div class="card"><div id="pending" class="n">—</div><div class="l">Ожидают решения</div></div>
+</section>
+<nav class="tabs">
+<button class="tab active" data-tab="signals">Сигналы</button>
+<button class="tab" data-tab="actions">Действия</button>
+<button class="tab" data-tab="crm">CRM</button>
+<button class="tab" data-tab="jobs">Вакансии</button>
+<button class="tab" data-tab="health">Система</button>
+</nav>
+<section id="signals" class="panel active"><div class="box"><div class="boxhead"><h2>Последние сигналы Feed</h2><input class="filter" data-filter="signalsTable" placeholder="Фильтр…"></div><div class="tablewrap"><table id="signalsTable"><thead><tr><th>Priority</th><th>Автор / компания</th><th>Типы</th><th>Почему интересно</th><th>Action</th><th>Confidence</th></tr></thead><tbody></tbody></table></div></div></section>
+<section id="actions" class="panel"><div class="box"><div class="boxhead"><h2>Очередь действий</h2><input class="filter" data-filter="actionsTable" placeholder="Фильтр…"></div><div class="tablewrap"><table id="actionsTable"><thead><tr><th>Priority</th><th>Цель</th><th>Действие</th><th>Approval</th><th>CRM</th><th>Причина</th></tr></thead><tbody></tbody></table></div></div></section>
+<section id="crm" class="panel"><div class="box"><div class="boxhead"><h2>Relationship CRM</h2><input class="filter" data-filter="crmTable" placeholder="Фильтр…"></div><div class="tablewrap"><table id="crmTable"><thead><tr><th>Score</th><th>Тип</th><th>Имя</th><th>Status</th><th>Seen</th><th>Роль / компания</th><th>Следующее действие</th></tr></thead><tbody></tbody></table></div></div></section>
+<section id="jobs" class="panel"><div class="box"><div class="boxhead"><h2>Последние вакансии</h2><input class="filter" data-filter="jobsTable" placeholder="Фильтр…"></div><div class="tablewrap"><table id="jobsTable"><thead><tr><th>Компания</th><th>Вакансия</th><th>Локация</th><th>Remote</th><th>Зарплата</th><th>Ссылка</th></tr></thead><tbody></tbody></table></div></div></section>
+<section id="health" class="panel"><div class="box"><div class="boxhead"><h2>Pipeline status</h2></div><div style="padding:16px"><pre id="healthJson" style="white-space:pre-wrap;margin:0"></pre></div></div></section>
+</main>
+<script>
+const BASE='https://raw.githubusercontent.com/Devorvant/linkedin-monitor-data/main/';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const arr=v=>Array.isArray(v)?v:[];
+async function getJson(name){const r=await fetch(BASE+name+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error(name+': HTTP '+r.status);return r.json()}
+function pill(v){let c='';if(v==='high')c=' p-high';if(v==='medium')c=' p-medium';if(String(v).includes('PENDING'))c=' p-pending';return `<span class="pill${c}">${esc(v||'—')}</span>`}
+function dt(v){if(!v)return '—';try{return new Intl.DateTimeFormat('ru-RU',{dateStyle:'short',timeStyle:'short'}).format(new Date(v))}catch{return v}}
+function link(url,text='открыть'){return url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(text)}</a>`:'—'}
+function setRows(id,html){const b=document.querySelector('#'+id+' tbody');b.innerHTML=html||'<tr><td colspan="8" class="empty">Нет данных</td></tr>'}
+function signalTypes(s){return arr(s.signal_types||s.signals).map(x=>String(x).replace('_SIGNAL','')).join(', ')}
+function actionNames(s){return arr(s.recommended_actions).join(', ')||'—'}
+function renderSignals(data){let rows=arr(data.signals).filter(s=>['high','medium'].includes(s.priority));setRows('signalsTable',rows.map(s=>`<tr><td>${pill(s.priority)}</td><td><b>${esc(s.author||s.company||'—')}</b><div class="small">${esc(s.company||'')}</div></td><td>${esc(signalTypes(s))}</td><td class="reason">${esc(s.why_relevant||'')}</td><td>${esc(actionNames(s))}</td><td>${esc(s.confidence??'—')}</td></tr>`).join(''))}
+function renderActions(data){setRows('actionsTable',arr(data.items).map(a=>{let target=a.relationship?.name||a.target?.name||a.target?.target_role||a.author||a.company||'—';let crm=a.relationship?.status||'—';return `<tr><td>${pill(a.priority)}</td><td><b>${esc(target)}</b><div class="small">${link(a.source_url,'source')}</div></td><td>${esc(a.primary_action||'—')}<div class="small">${esc(a.secondary_action||'')}</div></td><td>${pill(a.approval_status||a.approval||'—')}</td><td>${pill(crm)}</td><td class="reason">${esc(a.reason||'')}</td></tr>`}).join(''))}
+function renderCrm(data){setRows('crmTable',arr(data.items).map(r=>`<tr><td><b>${esc(r.score??'—')}</b></td><td>${esc(r.kind||'')}</td><td><b>${esc(r.name||'')}</b><div class="small">${link(r.latest_source_url,'source')}</div></td><td>${pill(r.status)}</td><td>${esc(r.times_seen??0)}<div class="small">${dt(r.last_seen)}</div></td><td>${esc([...arr(r.roles),...arr(r.companies)].join(' · ')||'—')}</td><td>${esc(r.suggested_action||'—')}<div class="small">recommended: ${esc(r.automation?.recommended_status||'—')}</div></td></tr>`).join(''))}
+function jobItems(data){if(Array.isArray(data))return data;if(Array.isArray(data.jobs))return data.jobs;if(Array.isArray(data.items))return data.items;return []}
+function renderJobs(data){setRows('jobsTable',jobItems(data).map(j=>`<tr><td><b>${esc(j.company||j.company_name||'—')}</b></td><td>${esc(j.title||j.job_title||'—')}</td><td>${esc(j.location||'—')}</td><td>${esc(j.remote||j.workplace_type||'—')}</td><td>${esc(j.salary||j.salary_text||'—')}</td><td>${link(j.job_url||j.url||j.linkedin_url)}</td></tr>`).join(''))}
+function updateCards(status){let f=status.feed_signals||{},a=status.action_queue||{},r=status.relationships||{};document.getElementById('lastRun').textContent=dt(status.generated_at);document.getElementById('posts').textContent=f.posts_analyzed??'—';document.getElementById('high').textContent=f.high_priority??'—';document.getElementById('medium').textContent=f.medium_priority??'—';document.getElementById('crm').textContent=r.total??'—';document.getElementById('pending').textContent=a.pending_approval??'—';let el=document.getElementById('pipelineStatus');el.textContent=status.status||'UNKNOWN';el.style.background=status.status==='OK'?'#ecfdf3':'#fff1f2';el.style.color=status.status==='OK'?'#067647':'#9f1239';document.getElementById('healthJson').textContent=JSON.stringify(status,null,2)}
+async function loadAll(){const err=document.getElementById('err');err.style.display='none';document.getElementById('pipelineStatus').textContent='Загрузка…';try{const [status,signals,actions,crm,jobs]=await Promise.all([getJson('feed_pipeline_status.json'),getJson('feed_signals_latest.json'),getJson('action_queue_latest.json'),getJson('relationship_watchlist.json'),getJson('jobs_latest.json')]);updateCards(status);renderSignals(signals);renderActions(actions);renderCrm(crm);renderJobs(jobs)}catch(e){err.textContent='Ошибка загрузки данных: '+e.message;err.style.display='block';document.getElementById('pipelineStatus').textContent='ERROR'}}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab).classList.add('active')});
+document.querySelectorAll('.filter').forEach(i=>i.oninput=()=>{let q=i.value.toLowerCase();document.querySelectorAll('#'+i.dataset.filter+' tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')});
+document.getElementById('refreshBtn').onclick=loadAll;loadAll();setInterval(loadAll,5*60*1000);
+</script>
+</body></html>
