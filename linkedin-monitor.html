@@ -39,5 +39,39 @@ async function workerJson(secret,method='GET',body=null){let opt={method,headers
 async function sendApproved(chosen,sourceGeneratedAt,stateEl){let secret=await getApprovalSecret();if(!secret)return null;stateEl.textContent='Передача в Cloudflare…';try{let existing=await workerJson(secret,'GET');let merged=new Map();for(const x of arr(existing?.items)){if(x?.action_id)merged.set(String(x.action_id),x)}let sentAt=new Date().toISOString();for(const x of chosen)merged.set(String(x.action_id),{...x,approved_at:sentAt});let items=[...merged.values()];let result=await workerJson(secret,'POST',{source_generated_at:sourceGeneratedAt,items});localStorage.setItem(APPROVAL_KEY,JSON.stringify({schema_version:2,state:'SENT_TO_CLOUDFLARE',saved_at:sentAt,source_generated_at:sourceGeneratedAt,items}));stateEl.innerHTML=`<span class="saved-note">Передано: ${chosen.length}; всего в очереди: ${result.saved??items.length}. Cloudflare подтвердил запись.</span>`;return result}catch(e){if(e.status===401){localStorage.removeItem(ACTION_SECRET_KEY);stateEl.innerHTML='<span class="error-note">Неверный APPROVAL_SECRET. Ключ удалён из браузера — нажми кнопку ещё раз и введи его заново.</span>'}else stateEl.innerHTML=`<span class="error-note">Ошибка передачи: ${esc(e.message||e)}</span>`;return null}}
 async function applySelected(){let chosen=[...selectedActions.values()];if(!chosen.length)return;let names=chosen.map(x=>`• ${x.target.name} — ${actionUi(x.action)}${x.approval_required?' ⚠':''}`).join('\n');if(!confirm(`Передать выбранные действия в серверную очередь?\n\n${names}\n\nВ очередь попадут только отмеченные действия.`))return;let result=await sendApproved(chosen,actionSourceGeneratedAt,document.getElementById('approvalState'));if(result){selectedActions.clear();document.querySelectorAll('.action-check').forEach(ch=>ch.checked=false);updateSelectionUi()}}
 async function applyHistorySelected(){let chosen=[...historySelectedActions.values()];if(!chosen.length)return;let d=document.getElementById('historyDate').value;chosen=chosen.map(x=>({...x,source_date:d}));let names=chosen.map(x=>`• ${x.target.name} — ${actionUi(x.action)}${x.approval_required?' ⚠':''}`).join('\n');if(!confirm(`Добавить действия из истории за ${d}?\n\n${names}\n\nОни будут объединены с текущей Cloudflare очередью. Повторная отправка разрешена.`))return;let result=await sendApproved(chosen,historySourceGeneratedAt,document.getElementById('historyApprovalState'));if(result){historySelectedActions.clear();document.querySelectorAll('.history-action-check').forEach(ch=>ch.checked=false);updateHistorySelectionUi();await loadHistory()}}
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab).classList.add('active');if(b.dataset.tab==='history')loadHistory()});document.querySelectorAll('.filter[data-filter]').forEach(i=>i.oninput=()=>{let q=i.value.toLowerCase();document.querySelectorAll('#'+i.dataset.filter+' tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')});document.getElementById('actionFilter').oninput=()=>{let q=document.getElementById('actionFilter').value.toLowerCase();document.querySelectorAll('.action-card').forEach(c=>c.style.display=(c.textContent.toLowerCase().includes(q)||c.dataset.search.includes(q))?'':'none')};document.getElementById('selectVisibleBtn').onclick=()=>{document.querySelectorAll('.action-card').forEach(c=>{if(c.style.display==='none')return;c.querySelectorAll('.action-check:not(:disabled)').forEach(ch=>{let i=Number(ch.dataset.card),j=Number(ch.dataset.plan),a=currentActions[i],x=arr(a?.action_plan)[j],item=a&&x?buildApprovedItem(a,i,x,j):null;if(item){ch.checked=true;selectedActions.set(ch.dataset.key,item)}})});updateSelectionUi()};document.getElementById('clearSelectionBtn').onclick=()=>{selectedActions.clear();document.querySelectorAll('.action-check').forEach(ch=>ch.checked=false);updateSelectionUi()};let ch=r.querySelector('.history-action-check:not(:disabled)');if(!ch)return;let i=Number(ch.dataset.card),j=Number(ch.dataset.plan),a=historyActions[i],x=historyPlanEntries(a)[j],item=a&&x?buildApprovedItem(a,i,x,j):null;if(item){ch.checked=true;historySelectedActions.set(ch.dataset.key,item)}});updateHistorySelectionUi()};document.querySelectorAll('.history-action-check').forEach(ch=>ch.checked=false);updateHistorySelectionUi()};document.getElementById('applySelectedBtn').onclick=applySelected;document.getElementById('refreshBtn').onclick=loadAll;document.getElementById('loadHistoryBtn').onclick=loadHistory;document.getElementById('historyDate').onchange=loadHistory;loadAll();setInterval(loadAll,300000);
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById(b.dataset.tab).classList.add('active');
+  if(b.dataset.tab==='history')loadHistory();
+});
+document.querySelectorAll('.filter[data-filter]').forEach(i=>i.oninput=()=>{
+  let q=i.value.toLowerCase();
+  document.querySelectorAll('#'+i.dataset.filter+' tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none');
+});
+document.getElementById('actionFilter').oninput=()=>{
+  let q=document.getElementById('actionFilter').value.toLowerCase();
+  document.querySelectorAll('.action-card').forEach(c=>c.style.display=(c.textContent.toLowerCase().includes(q)||c.dataset.search.includes(q))?'':'none');
+};
+document.getElementById('selectVisibleBtn').onclick=()=>{
+  document.querySelectorAll('.action-card').forEach(c=>{
+    if(c.style.display==='none')return;
+    c.querySelectorAll('.action-check:not(:disabled)').forEach(ch=>{
+      let i=Number(ch.dataset.card),j=Number(ch.dataset.plan),a=currentActions[i],x=arr(a?.action_plan)[j],item=a&&x?buildApprovedItem(a,i,x,j):null;
+      if(item){ch.checked=true;selectedActions.set(ch.dataset.key,item)}
+    });
+  });
+  updateSelectionUi();
+};
+document.getElementById('clearSelectionBtn').onclick=()=>{
+  selectedActions.clear();
+  document.querySelectorAll('.action-check').forEach(ch=>ch.checked=false);
+  updateSelectionUi();
+};
+document.getElementById('applySelectedBtn').onclick=applySelected;
+document.getElementById('refreshBtn').onclick=loadAll;
+document.getElementById('loadHistoryBtn').onclick=loadHistory;
+document.getElementById('historyDate').onchange=loadHistory;
+loadAll();
+setInterval(loadAll,300000);
 </script></body></html>
